@@ -1,0 +1,46 @@
+video_encoder:
+    enc_size: 256
+    enc_layer: 1
+    dec_size: 256
+    dec_layer: 1
+    embed_size: 128
+    head_size: 4
+    dropout_rate: 0.2
+    feat_dropout_rate: 0.0
+    pooling: sap
+    input_norm: false
+
+audio_encoder:
+    enc_size: 256
+    enc_layer: 1
+    dec_size: 256
+    dec_layer: 1
+    embed_size: 128
+    head_size: 4
+    dropout_rate: 0.2
+    feat_dropout_rate: 0.0
+    pooling: sap
+    input_norm: false
+
+text_encoder:
+    enc_size: 256
+    enc_layer: 1
+    dec_size: 256
+    dec_layer: 1
+    embed_size: 128
+    head_size: 4
+    dropout_rate: 0.2
+    feat_dropout_rate: 0.0
+    pooling: sap
+    input_norm: false
+
+multimodal_decoder:
+    dec_size: 128
+    dec_layer: 2
+    head_size: 1
+    dropout_rate: 0.2
+    pooling: gate
+
+loss:
+    lossfunc: 'ce'
+    most_loss_weight: 0.1

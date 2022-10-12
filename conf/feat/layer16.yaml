@@ -1,0 +1,42 @@
+audio_feat:
+  slice:
+    layer: 16
+  sliding_window:
+    proc: flatten
+    window_shift: 1
+    window_size: 1
+  spec_augment:
+    max_freq_rate: 0.02
+    max_time_rate: 0.2
+    max_time_warp: 0
+    n_freq_mask: 10
+    n_time_mask: 2
+    total_max_time_rate: 0.4
+text_feat:
+  slice:
+    layer: 16
+  sliding_window:
+    proc: flatten
+    window_shift: 1
+    window_size: 1
+  spec_augment:
+    max_freq_rate: 0.02
+    max_time_rate: 0.2
+    max_time_warp: 0
+    n_freq_mask: 10
+    n_time_mask: 2
+    total_max_time_rate: 0.4
+video_feat:
+  slice:
+    layer: 16
+  sliding_window:
+    proc: flatten
+    window_shift: 1
+    window_size: 1
+  spec_augment:
+    max_freq_rate: 0.02
+    max_time_rate: 0.2
+    max_time_warp: 0
+    n_freq_mask: 10
+    n_time_mask: 2
+    total_max_time_rate: 0.4

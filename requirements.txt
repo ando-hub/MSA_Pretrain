@@ -1,0 +1,11 @@
+torch
+torchvision
+torchaudio
+soundfile
+validators
+pytorch-pretrained-bert
+timm
+matplotlib
+tensorboard
+h5py
+seaborn
