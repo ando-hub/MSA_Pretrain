@@ -1,7 +1,9 @@
-# ON THE USE OF MODALITY-SPECIFIC LARGE-SCALE PRE-TRAINED ENCODERS FOR MULTIMODAL SENTIMENT ANALYSIS
+# Multimodal Sentiment Analysis
 
-Official pytorch implementation of [On the Use of Modalty-Specific Large-Scale Pre-Trained Encoders for Multimodal Sentiment Analysis (SLT2022)](https://arxiv.org/abs/xxxx.xxxxx). 
-Please read `LICENSE` before using scripts.
+Official pytorch implementation of [On the Use of Modalty-Specific Large-Scale Pre-Trained Encoders for Multimodal Sentiment Analysis (SLT2022)](https://arxiv.org/abs/xxxx.xxxxx).
+
+## License
+Please read `LICENSE`  before using scripts.
 
 ## Usage
 
@@ -10,20 +12,20 @@ Please read `LICENSE` before using scripts.
 pip install -r requirements
 ```
 2. Run setup scripts
-Please edit the scripts to set CMU-MOSI/CMU-MOSEI root path before running if you have these corpora.
+
+Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if you have CMU-MOSI/CMU-MOSEI data.
 ```
 ./setup_cmumosi.sh
 ./setup_cmumosei.sh
 ```
 
-3. Run training scripts
+3. Run training script
 ```
 ./train.sh
 ```
 
-
 ## Paper
-Please cite our paper if you find our work useful for your research:
+Please cite the following paper if you find our work is useful in your research:
 
 ```
 @inproceedings{ando2022MSA_UEGD,
