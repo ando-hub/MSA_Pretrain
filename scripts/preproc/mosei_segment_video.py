@@ -5,11 +5,11 @@ from tqdm import tqdm
 
 
 def _parse():
-    parser = argparse.ArgumentParser(description='video segmentation')
+    parser = argparse.ArgumentParser(description='get utterance-level video/audio')
     parser.add_argument("fullvideo_dir", type=str, help='CMU-MOSEI full video path')
     parser.add_argument("interval_list", type=str, help='CMU-MOSEI interval list')
     parser.add_argument("segvideo_dir", type=str, help='CMU-MOSEI segmented video path')
-    parser.add_argument("segaudio_dir", type=str, help='CMU-MOSEI segmented video path')
+    parser.add_argument("segaudio_dir", type=str, help='CMU-MOSEI segmented audio path')
     args = parser.parse_args()
     return args
 

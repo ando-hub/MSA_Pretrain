@@ -1,16 +1,16 @@
 #!/bin/bash
 
-stage=0
-stop_stage=100
+stage=1
+stop_stage=1
 
 gpuid=-1                # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
 extfeat_batchsize=4     # proc every $batchsize files in audio/text feature extraction
 
 # cmumosei dataset path
-cmumosei_root='/nfs/data/open/CMU-MOSEI/Raw'
-cmumosei_label_csd='/nfs/data/open/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
-cmumosei_feat_mmdatasdk='/nfs/data/open/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
-cmumosei_feat_mmsa='/home/ando/work/220613_MMER_MMSA/data/MOSEI/Processed/unaligned_50.pkl'
+cmumosei_root='./data/src/CMU-MOSEI/Raw'
+cmumosei_label_csd='./data/src/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
+cmumosei_feat_mmdatasdk='./data/src/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
+cmumosei_feat_mmsa='./data/src/CMU-MOSEI/MMSA/Processed/unaligned_50.pkl'
 
 output_dir='./data/dataset/cmumosei'
 label_format='sentiment_regress'    # sentiment_regress, sentiment_class, or emo_class
@@ -28,7 +28,7 @@ if [ $stage -le 0 ] && [ $stop_stage -ge 0 ]; then
         echo "Download CMU-MOSEI raw dataset ..."
         mkdir -p $cmumosei_root
         wget -P $cmumosei_root/../ http://immortal.multicomp.cs.cmu.edu/raw_datasets/CMU_MOSEI.zip
-        unzip $cmumosei_root/../CMU_MOSEI.zip -d $cmumosei_root
+        unzip $cmumosei_root/../CMU_MOSEI.zip -d $cmumosei_root/../
     fi
     
     # CMU-MOSEI labels
@@ -51,12 +51,14 @@ if [ $stage -le 0 ] && [ $stop_stage -ge 0 ]; then
 
     # CMU-MOSEI features (mmsa)
     if [ ! -f $cmumosei_feat_mmsa ]; then
+        if [ ! -d ${cmumosei_feat_mmsa%/*} ]; then
+            mkdir -p ${cmumosei_feat_mmsa%/*}
+        fi
         echo "No exist CMU-MOSEI feat (MMSA) !"
         echo "Please access 'https://github.com/thuiar/MMSA', download 'MOSEI/Processed/unaligned_50.pkl' in 2.Datasets, and save it to ${cmumosei_feat_mmsa%/*}"
         exit 1
     fi
 fi
-
 
 if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
     # stage 1: get utterance-level video/audio/text files

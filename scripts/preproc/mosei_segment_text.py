@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 
 def _parse():
-    parser = argparse.ArgumentParser(description='generate text segments')
+    parser = argparse.ArgumentParser(description='get utterance-level text from transcriptions')
     parser.add_argument('cmumosei_txt_dir', type=str,
                         help='${mosei_root}/Transcript/Segmented/Combined')
     parser.add_argument('interval_list', type=str, help='CMU-MOSEI interval list')
@@ -35,8 +35,7 @@ def _main():
         valid_dict = {}
 
     txtfs = glob.glob(os.path.join(args.cmumosei_txt_dir, '*.txt'))
-    if not len(txtfs):
-        raise ValueError('No exist *.txt in {}'.format(args.cmumosei_text_dir))
+    assert len(txtfs), 'No exist *.txt in {}'.format(args.cmumosei_text_dir)
 
     for txtf in tqdm(txtfs):
         fid = os.path.splitext(os.path.basename(txtf))[0]
