@@ -1,16 +1,20 @@
 #!/bin/bash
 
-stage=1
-stop_stage=1
+stage=3
+stop_stage=3
 
 gpuid=-1                # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
 extfeat_batchsize=4     # proc every $batchsize files in audio/text feature extraction
 
 # cmumosei dataset path
-cmumosei_root='./data/src/CMU-MOSEI/Raw'
-cmumosei_label_csd='./data/src/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
-cmumosei_feat_mmdatasdk='./data/src/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
-cmumosei_feat_mmsa='./data/src/CMU-MOSEI/MMSA/Processed/unaligned_50.pkl'
+#cmumosei_root='./data/src/CMU-MOSEI/Raw'
+#cmumosei_label_csd='./data/src/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
+#cmumosei_feat_mmdatasdk='./data/src/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
+#cmumosei_feat_mmsa='./data/src/CMU-MOSEI/MMSA/Processed/unaligned_50.pkl'
+cmumosei_root='/nfs/data/open/CMU-MOSEI/Raw'
+cmumosei_label_csd='/nfs/data/open/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
+cmumosei_feat_mmdatasdk='/nfs/data/open/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
+cmumosei_feat_mmsa='/home/ando/work/220613_MMER_MMSA/MMSA/Processed/unaligned_50.pkl'
 
 output_dir='./data/dataset/cmumosei'
 label_format='sentiment_regress'    # sentiment_regress, sentiment_class, or emo_class
@@ -60,31 +64,33 @@ if [ $stage -le 0 ] && [ $stop_stage -ge 0 ]; then
     fi
 fi
 
+
 if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
     # stage 1: get utterance-level video/audio/text files
-
-    # get interval info
+    echo "get interval info ..."
     python scripts/preproc/mosei_get_interval_list.py \
         $cmumosei_root/Transcript/Segmented/Combined \
         $cmumosei_label_csd \
         $output_dir/interval/cmumosei_interval_all.txt
     
-    # get utterance-level video/audio files from entire videos 
+    echo "get utterance-level video/audio files ..."
     python scripts/preproc/mosei_segment_video.py \
         $cmumosei_root/Videos/Full/Combined \
         $output_dir/interval/cmumosei_interval_all.txt \
         $output_dir/video/original \
         $output_dir/audio/original 
 
-    # get utterance-level text files from entire transcriptions 
+    echo "get utterance-level text files ..."
     python scripts/preproc/mosei_segment_text.py \
         $cmumosei_root/Transcript/Segmented/Combined \
         $output_dir/interval/cmumosei_interval_all.txt \
         $output_dir/text/original
 fi
 
+
 if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then
     # stage 2: create utterance-level labels
+    echo "create utterance-level labels ..."
     python scripts/preproc/mosei_create_label.py \
         --label-format $label_format \
         $cmumosei_label_csd \
@@ -92,8 +98,10 @@ if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then
         $output_dir/label/$label_format
 fi
 
+
 if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
-    # 3. frame resampling, face detection and feature extraction from video
+    # stage 3: feature extraction from video
+    echo "frame resampling, face detection and feature extraction from video ..."
     python scripts/extfeat/extract_video_embedding.py \
         $output_dir/video/original \
         $output_dir/feat/video/$video_encoder \
@@ -108,7 +116,8 @@ if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
 fi
 
 if [ $stage -le 4 ] && [ $stop_stage -ge 4 ]; then
-    # 4. feature extraction from audio
+    # stage 4: feature extraction from audio
+    echo "feature extraction from audio ..."
     python scripts/extfeat/extract_audio_embedding.py \
         $output_dir/audio/original \
         $output_dir/feat/audio/tmp_$audio_encoder \
@@ -119,6 +128,7 @@ if [ $stage -le 4 ] && [ $stop_stage -ge 4 ]; then
     
     # resample audio (20ms frame = 50fps -> 5fps)
     # TODO: implement resample func in extract_audio_embedding.py
+    echo "resampling audio features ..."
     python scripts/extfeat/resamp_npy.py \
         $output_dir/feat/audio/tmp_$audio_encoder \
         $output_dir/feat/audio/$audio_encoder \
@@ -128,7 +138,8 @@ if [ $stage -le 4 ] && [ $stop_stage -ge 4 ]; then
 fi
 
 if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
-    # 5. tokenize, indexing and feature extraction from text
+    # stage 5: feature extraction from text
+    echo "tokenize, indexing and feature extraction from text ..."
     python scripts/extfeat/extract_text_embedding.py \
         $output_dir/text/original \
         $output_dir/feat/text/$text_encoder \
@@ -142,6 +153,7 @@ fi
 if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
     # 6. get conventional features for comparison
     # mmdatasdk (CMU-MOSEI official features): FACET 35dim, COVEREP 74dim, GloVe 300dim
+    echo "mmdatasdk feature preparation ..."
     python scripts/preproc/mosei_convert_mmdatasdk_dataset.py \
         $cmumosei_pickle \
         $output_dir/interval/cmumosei_interval_all.txt \
@@ -150,6 +162,7 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
         $output_dir/feat/text/mmdatasdk_noalign 
 
     # MMSA (https://github.com/thuiar/MMSA): FACET 35dim, COVEREP 74dim, BERT-Base 768dim
+    echo "MMSA feature preparation ..."
     python scripts/preproc/convert_pickle2npy.py \
         $cmumosei_pickle_mmsa \
         $output_dir/feat/video/mmsa_noalign \

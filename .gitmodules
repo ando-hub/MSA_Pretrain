@@ -1,0 +1,6 @@
+[submodule "scripts/extfeat/extlib/VGGFace2"]
+	path = scripts/extfeat/extlib/VGGFace2
+	url = git@github.com:cydonia999/VGGFace2-pytorch.git
+[submodule "scripts/extfeat/extlib/unilm"]
+	path = scripts/extfeat/extlib/unilm
+	url = git@github.com:microsoft/unilm.git

@@ -74,6 +74,5 @@ def _main():
     with open(args.output_interval, 'w') as fp:
         fp.write('\n'.join(sorted(outl)) + '\n')
 
-
 if __name__ == '__main__':
     _main()

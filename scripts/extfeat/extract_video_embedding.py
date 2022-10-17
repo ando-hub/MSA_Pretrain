@@ -2,10 +2,7 @@ import os
 import glob
 import argparse
 import numpy as np
-import pdb
-#import h5py
 from tqdm import tqdm
-import torch
 try:
     import cv2
 except ImportError as e:
@@ -13,7 +10,7 @@ except ImportError as e:
 
 from mylib.util import convert_cv2topil, convert_piltocv2
 from mylib.face_detector import FaceDetector
-from mylib.facenet_pytorch import FacenetEncoder, FacenetFaceDetector
+from mylib.facenet_pytorch import FacenetFaceDetector, FacenetEncoder
 from extlib.CLIP_decode import CLIPEncoder
 try:
     from extlib.VGGFace2_decode import VGGFace2Encoder
@@ -21,18 +18,49 @@ except ModuleNotFoundError as e:
     print(e)
 
 
+def _parse():
+    parser = argparse.ArgumentParser(description='Create faceimage hdf5 file')
+    parser.add_argument('ind', type=str, help='input face-embeddings rootdir')
+    parser.add_argument('outd', type=str, help='output hdf5')
+    parser.add_argument('--fps', type=int, default=3,
+                        help='feature extraction fps')
+    parser.add_argument('--face-detect-method',
+                        choices=['dlib', 'dlib_dnn', 'opencv', 'facenet'],
+                        default='dlib_dnn',
+                        help='face detection method')
+    parser.add_argument('--face-detect-model', type=str,
+                        help='face detection model')
+    parser.add_argument('--extfeat-method', type=str,
+                        choices=['VGGFace2', 'facenet', 'CLIP'],
+                        default='VGGFace2',
+                        help='feature extraction method')
+    parser.add_argument('--extfeat-model', type=str,
+                        help='feature extraction model')
+    parser.add_argument('--face-outd', type=str,
+                        help='feature extraction model')
+    parser.add_argument('--image-outd', type=str,
+                        help='feature extraction model')
+    parser.add_argument('--gpuid', type=int, default=-1,
+                        help='gpu id (run cpu if gpuid < 0)')
+    parser.add_argument('--face-size', type=int, default=160,
+                        help='face image output size (default: 160)')
+    parser.add_argument('--get-layer-results', action='store_true', default=False,
+                        help='get results of the all encoder layers')
+    return parser.parse_args()
+
+
 class VideoEmbeddingExtractor():
     def __init__(self,
-            face_detect_method,
-            extfeat_method,
-            face_detect_model=None,
-            extfeat_model=None,
-            device='cpu',
-            max_proc_frames=100,
-            face_size=160,
-            fps=3,
-            get_layer_results=False
-            ):
+                 face_detect_method,
+                 extfeat_method,
+                 face_detect_model=None,
+                 extfeat_model=None,
+                 device='cpu',
+                 max_proc_frames=100,
+                 face_size=160,
+                 fps=3,
+                 get_layer_results=False
+                 ):
         self.max_proc_frames = max_proc_frames
         self.fps = fps
 
@@ -106,37 +134,6 @@ class VideoEmbeddingExtractor():
             # layer results: [nlen, nlay, ndim] -> [nlay, nlen, ndim]
             embeds = embeds.transpose(1, 0, 2)
         np.save(embed_outf, embeds)
-
-
-def _parse():
-    parser = argparse.ArgumentParser(description='Create faceimage hdf5 file')
-    parser.add_argument('ind', type=str, help='input face-embeddings rootdir')
-    parser.add_argument('outd', type=str, help='output hdf5')
-    parser.add_argument('--fps', type=int, default=3,
-                        help='feature extraction fps')
-    parser.add_argument('--face-detect-method',
-                        choices=['dlib', 'dlib_dnn', 'opencv', 'facenet'],
-                        default='dlib_dnn',
-                        help='face detection method')
-    parser.add_argument('--face-detect-model', type=str,
-                        help='face detection model')
-    parser.add_argument('--extfeat-method', type=str,
-                        choices=['VGGFace2', 'facenet', 'CLIP'],
-                        default='VGGFace2',
-                        help='feature extraction method')
-    parser.add_argument('--extfeat-model', type=str,
-                        help='feature extraction model')
-    parser.add_argument('--face-outd', type=str,
-                        help='feature extraction model')
-    parser.add_argument('--image-outd', type=str,
-                        help='feature extraction model')
-    parser.add_argument('--gpuid', type=int, default=-1,
-                        help='gpu id (run cpu if gpuid < 0)')
-    parser.add_argument('--face-size', type=int, default=160,
-                        help='face image output size (default: 160)')
-    parser.add_argument('--get-layer-results', action='store_true', default=False,
-                        help='get results of the all encoder layers')
-    return parser.parse_args()
 
 
 def get_frames(inf, fps, dst_height=-1, image_outd=None):
@@ -217,4 +214,3 @@ def _main():
 
 if __name__ == '__main__':
     _main()
-

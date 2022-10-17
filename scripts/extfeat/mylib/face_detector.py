@@ -1,10 +1,6 @@
 import os
 import argparse
 import numpy as np
-import pdb
-import json
-from tqdm import tqdm
-from scipy.signal import medfilt
 try:
     import cv2
 except ImportError as e:
@@ -16,6 +12,12 @@ except ImportError as e:
 
 
 def _parse():
+    """
+    opencv haar-cascade model:
+        https://github.com/kipr/opencv/blob/master/data/haarcascades/haarcascade_frontalface_default.xml
+    dlib_dnn model:
+        https://github.com/justadudewhohacks/face-recognition.js-models/blob/master/models/mmod_human_face_detector.dat
+    """
     parser = argparse.ArgumentParser(description='Detect Speech Interval')
     parser.add_argument('ind', type=str, help='input jpeg dir')
     parser.add_argument('outd', type=str, help='output jpeg dir')
@@ -25,12 +27,8 @@ def _parse():
                         help='face detection backend')
     parser.add_argument('-o', type=str,
                         help='output jpeg dir with face rectangle')
-    parser.add_argument('--dlib-dnn-model', type=str,
-                        default='./dlib-models/mmod_human_face_detector.dat',
-                        help='dlib-dnn model path')
-    parser.add_argument('--opencv-model', type=str,
-                        default='./opencv/data/haarcascades/haarcascade_frontalface_default.xml',
-                        help='opencv haar-cascade model path')
+    parser.add_argument('--model', type=str,
+                        help='dlib-dnn/opencv haar-cascade model path')
     return parser.parse_args()
 
 
@@ -45,9 +43,9 @@ class FaceDetector():
         elif backend == 'dlib_dnn':
             self.detector = dlib.cnn_face_detection_model_v1(model)
         else:
-            raise ValueError('backend must be either opencv or dlib!')
+            raise ValueError('backend must be either opencv, dlib or dlib_dnn!')
 
-    def __rect2coordinates(self, rect, resize, im):
+    def __rect2coordinates(self, im, rect, resize=1):
         if self.backend == 'opencv':
             left = int(rect[0] / resize)
             top = int(rect[1] / resize)
@@ -72,10 +70,8 @@ class FaceDetector():
     def detect(self, images, save_path=None, rect_save_path=None):
         images_cropped = []
         for i, image in enumerate(images):
-            #resize = self.height / image.shape[0]
-            #image_reshape = cv2.resize(image, dsize=None, fx=resize, fy=resize)
             image_reshape = image
-            
+
             # detect
             if self.backend == 'opencv':
                 frame_gray = cv2.cvtColor(image_reshape, cv2.COLOR_BGR2GRAY)
@@ -87,13 +83,13 @@ class FaceDetector():
                         )
             elif self.backend == 'dlib' or self.backend == 'dlib_dnn':
                 facerect = self.detector(image_reshape)
-            
+
             # return cropped face image
             if len(facerect) < 1:
                 im_cropped = None
             else:
                 # select the largest face as detection result
-                regions = [self.__rect2coordinates(r, resize, image) for r in facerect]
+                regions = [self.__rect2coordinates(image, r) for r in facerect]
                 areas = np.array([(v[1]-v[0])*(v[3]-v[2]) for v in regions])
                 (top, bottom, left, right) = regions[areas.argmax()]
                 im_cropped = image[top:bottom, left:right, :]
@@ -101,12 +97,12 @@ class FaceDetector():
 
             if save_path:
                 if im_cropped is not None:
-                    cv2.imwrite(save_path[i], im_cropped) 
+                    cv2.imwrite(save_path[i], im_cropped)
 
             # save original image with face rectangles
             if rect_save_path:
                 for r in facerect:
-                    top, bottom, left, right = self.__rect2coordinates(r, resize, image)
+                    top, bottom, left, right = self.__rect2coordinates(image, r)
                     cv2.rectangle(
                             image,
                             (left, top),
@@ -115,15 +111,13 @@ class FaceDetector():
                             thickness=2
                             )
                 cv2.imwrite(rect_save_path[i], image, [cv2.IMWRITE_JPEG_QUALITY, 100])
-
-
         return images_cropped
 
 
 def _main():
     args = _parse()
 
-    face_detector = FaceDetector(args.b, args.dlib_dnn_model, args.opencv_model)
+    face_detector = FaceDetector(args.b, args.model)
     rectf = None
     for dpath, dname, fnames in os.walk(args.ind):
         for fname in fnames:
@@ -142,4 +136,3 @@ def _main():
 
 if __name__ == '__main__':
     _main()
-

@@ -2,6 +2,7 @@ data/
 *.pkl
 *.pt
 *.pyc
+*.swp
 .nfs*
 
 # Byte-compiled / optimized / DLL files

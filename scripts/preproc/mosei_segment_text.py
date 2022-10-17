@@ -1,6 +1,7 @@
 import argparse
 import os
 import glob
+from collections import defaultdict
 from tqdm import tqdm
 
 
@@ -25,6 +26,14 @@ def segmentation(txtf, outd, valid_segids=[]):
     return
 
 
+def load_valid_dict(interval_list):
+    valid_dict = defaultdict(list)
+    for l in open(interval_list):
+        fname, segid, _, _ = l.strip().split()
+        valid_dict[fname].append(segid)
+    return valid_dict
+
+
 def _main():
     args = _parse()
     os.makedirs(args.output_dir, exist_ok=True)
@@ -38,10 +47,10 @@ def _main():
     assert len(txtfs), 'No exist *.txt in {}'.format(args.cmumosei_text_dir)
 
     for txtf in tqdm(txtfs):
-        fid = os.path.splitext(os.path.basename(txtf))[0]
+        fname = os.path.splitext(os.path.basename(txtf))[0]
         if valid_dict:
-            if fid in valid_dict:
-                segmentation(txtf, args.output_dir, valid_segids=valid_dict[fid])
+            if fname in valid_dict:
+                segmentation(txtf, args.output_dir, valid_segids=valid_dict[fname])
         else:
             segmentation(txtf, args.output_dir)
 

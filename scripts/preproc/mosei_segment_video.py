@@ -48,8 +48,8 @@ def _main():
                     ss=start,
                     to=end,
                     )
-            ffmpeg.run(v_stream)
-            ffmpeg.run(a_stream)
+            ffmpeg.run(v_stream, quiet=True)
+            ffmpeg.run(a_stream, quiet=True)
 
 
 if __name__ == "__main__":
