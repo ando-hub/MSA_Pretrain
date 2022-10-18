@@ -5,6 +5,8 @@ import numpy as np
 from extlib.CLIP import clip
 from PIL import Image
 
+torch.use_deterministic_algorithms(True)
+
 
 def convert_cv2topil(array):
     return Image.fromarray(cv2.cvtColor(array, cv2.COLOR_BGR2RGB))
@@ -15,7 +17,7 @@ class CLIPEncoder():
         self.device = device
         self.get_layer_results = get_layer_results
         self.model, self.preprocess = clip.load(arch_type, device=device)
-        self.model = self.model.eval()
+        self.model.eval()
         self.embed_size = 1024 if get_layer_results else 768
         self.nlayers = 24
 

@@ -1,8 +1,8 @@
 import os
 import argparse
-import pdb
 import pickle
 import numpy as np
+from tqdm import tqdm
 
 
 def _parse():
@@ -24,8 +24,9 @@ def _main():
     with open(args.inf, 'rb') as fp:
         data = pickle.load(fp)
 
-    for _d in data.values():
-        for _id, _v, _a, _t in zip(_d['id'], _d['vision'], _d['audio'], _d['text']):
+    for vset, _d in data.items():
+        print('unpacking subset: {}'.format(vset))
+        for _id, _v, _a, _t in tqdm(zip(_d['id'], _d['vision'], _d['audio'], _d['text']), total=len(_d['id'])):
             if isinstance(_id, str):
                 fname = _id.replace('$_$', '_') + '.npy'
             else:

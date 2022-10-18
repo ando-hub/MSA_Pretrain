@@ -10,3 +10,4 @@ tensorboard
 h5py
 seaborn
 ffmpeg-python
+opencv-python

@@ -2,28 +2,55 @@ import os
 import glob
 import argparse
 import numpy as np
-import pdb
-from multiprocessing import Pool
 import torch
 import torchaudio
 from tqdm import tqdm
 import soundfile as sf
-from extlib.wavlm.WavLM import WavLM, WavLMConfig
+# add WavLM library
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), 'extlib/unilm/wavlm'))
+from WavLM import WavLM, WavLMConfig
+
+torch.use_deterministic_algorithms(True)
+
+
+def _parse():
+    parser = argparse.ArgumentParser(description='Extract audio features and save in hdf5')
+    parser.add_argument('ind', type=str, help='input audio rootdir')
+    parser.add_argument('outd', type=str, help='output npy dir')
+    parser.add_argument('--encoder-type', type=str,
+                        default='wavlm',
+                        help='model type: wavlm, [wav2vec2|hubert]_[base|large]')
+    parser.add_argument('--wavlm-model-path', type=str, help='wavlm model path')
+    parser.add_argument('-r', type=int, default=1,
+                        help='subsampling rate of encoder output (Note: WavLM out is 50fps)')
+    parser.add_argument('--gpuid', type=int, default=-1,
+                        help='gpu id (run cpu if gpuid < 0)')
+    parser.add_argument('--get-layer-results', action='store_true', default=False,
+                        help='get results of the all encoder layers')
+    parser.add_argument('--batchsize', type=int, default=1,
+                        help='proc #batchsize .wav files per decode')
+    return parser.parse_args()
 
 
 class AudioEmbeddingExtractor():
-    def __init__(self, model_type, wavlm_model_path, get_layer_results=False, device='cpu'):
+    def __init__(self, encoder_type, wavlm_model_path, resamp=1, get_layer_results=False, device='cpu'):
         self.device = device
         self.get_layer_results = get_layer_results
-        self.model_type = model_type
+        self.encoder_type = encoder_type
+        self.resamp = resamp
 
-        if model_type == 'wavlm':
+        if encoder_type == 'wavlm':
+            if not os.path.exists(wavlm_model_path):
+                raise ValueError(
+                        'invalid --wavlm-model-path: {}\nVisit https://github.com/microsoft/unilm/tree/master/wavlm, download and save WavLM-Large model'.format(wavlm_model_path)
+                        )
             checkpoint = torch.load(wavlm_model_path)
             self.cfg = WavLMConfig(checkpoint['cfg'])
             self.model = WavLM(self.cfg)
             self.model.load_state_dict(checkpoint['model'])
         else:
-            bundle = getattr(torchaudio.pipelines, model_type.upper())
+            bundle = getattr(torchaudio.pipelines, encoder_type.upper())
             self.model = bundle.get_model()
         self.model.eval()
         self.model.to(device)
@@ -43,7 +70,7 @@ class AudioEmbeddingExtractor():
                 length = torch.tensor(length).to(self.device)
                 padding_mask = torch.arange(x.shape[1])[None, :].to(self.device) >= length[:, None]
 
-        if self.model_type == 'wavlm':
+        if self.encoder_type == 'wavlm':
             # decode
             with torch.no_grad():
                 (y, layer_results), ret_mask = self.model.extract_features(
@@ -109,26 +136,7 @@ class AudioEmbeddingExtractor():
         for f, emb in zip(infs, y):
             clip_id = os.path.splitext(os.path.basename(f))[0]
             outf = os.path.join(outd, clip_id+'.npy')
-            np.save(outf, emb)
-
-
-def _parse():
-    parser = argparse.ArgumentParser(description='Extract audio features and save in hdf5')
-    parser.add_argument('ind', type=str, help='input audio rootdir')
-    parser.add_argument('outd', type=str, help='output npy dir')
-    parser.add_argument('--model-type', type=str,
-                        default='wavlm',
-                        help='model type: wavlm, [wav2vec2|hubert]_[base|large]')
-    parser.add_argument('--wavlm-model-path', type=str,
-                        default='./conf/feat/WavLM-Large.pt',
-                        help='wavlm model path')
-    parser.add_argument('--gpuid', type=int, default=-1,
-                        help='gpu id (run cpu if gpuid < 0)')
-    parser.add_argument('--get-layer-results', action='store_true', default=False,
-                        help='get results of the all encoder layers')
-    parser.add_argument('--batchsize', type=int, default=1,
-                        help='proc #batchsize .wav files per decode')
-    return parser.parse_args()
+            np.save(outf, emb[:, ::self.resamp])
 
 
 def _main():
@@ -138,8 +146,9 @@ def _main():
 
     print('prepare extractor')
     extractor = AudioEmbeddingExtractor(
-            args.model_type,
+            args.encoder_type,
             args.wavlm_model_path,
+            resamp=args.r,
             get_layer_results=args.get_layer_results,
             device=device
             )
@@ -152,12 +161,13 @@ def _main():
         if not os.path.exists(outf):
             infs.append(f)
 
-    # proc
+    print('start feature extraction')
     for fs in tqdm([infs[i:i+args.batchsize] for i in range(0, len(infs), args.batchsize)]):
         try:
             extractor.extract_fromfiles(fs, args.outd)
         except RuntimeError as e:
             print(e)
+
 
 if __name__ == '__main__':
     _main()

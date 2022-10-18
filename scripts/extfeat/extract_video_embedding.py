@@ -3,12 +3,12 @@ import glob
 import argparse
 import numpy as np
 from tqdm import tqdm
+import pdb
 try:
     import cv2
 except ImportError as e:
     print(e)
 
-from mylib.util import convert_cv2topil, convert_piltocv2
 from mylib.face_detector import FaceDetector
 from mylib.facenet_pytorch import FacenetFaceDetector, FacenetEncoder
 from extlib.CLIP_decode import CLIPEncoder
@@ -19,31 +19,31 @@ except ModuleNotFoundError as e:
 
 
 def _parse():
-    parser = argparse.ArgumentParser(description='Create faceimage hdf5 file')
-    parser.add_argument('ind', type=str, help='input face-embeddings rootdir')
-    parser.add_argument('outd', type=str, help='output hdf5')
+    parser = argparse.ArgumentParser(description='Visual feature extraction')
+    parser.add_argument('ind', type=str, help='input video dir')
+    parser.add_argument('outd', type=str, help='output video feature dir')
     parser.add_argument('--fps', type=int, default=3,
-                        help='feature extraction fps')
+                        help='feature extraction frequency')
     parser.add_argument('--face-detect-method',
                         choices=['dlib', 'dlib_dnn', 'opencv', 'facenet'],
-                        default='dlib_dnn',
-                        help='face detection method')
+                        default='facenet',
+                        help='face detection method [dlib|dlib_dnn|opencv|facenet]')
     parser.add_argument('--face-detect-model', type=str,
-                        help='face detection model')
-    parser.add_argument('--extfeat-method', type=str,
+                        help='face detection model (opencv/dlib_dnn only)')
+    parser.add_argument('--encoder-type', type=str,
                         choices=['VGGFace2', 'facenet', 'CLIP'],
-                        default='VGGFace2',
-                        help='feature extraction method')
-    parser.add_argument('--extfeat-model', type=str,
-                        help='feature extraction model')
+                        default='CLIP',
+                        help='feature extraction method [VGGFace2|facenet|CLIP]')
+    parser.add_argument('--encoder-model', type=str,
+                        help='feature extraction model (VGGFace2/facenet only)')
     parser.add_argument('--face-outd', type=str,
-                        help='feature extraction model')
+                        help='detected faces output dir')
     parser.add_argument('--image-outd', type=str,
-                        help='feature extraction model')
+                        help='subsampled images output dir')
     parser.add_argument('--gpuid', type=int, default=-1,
                         help='gpu id (run cpu if gpuid < 0)')
-    parser.add_argument('--face-size', type=int, default=160,
-                        help='face image output size (default: 160)')
+    parser.add_argument('--face-size', type=int, default=256,
+                        help='cropped face image size (default: 256)')
     parser.add_argument('--get-layer-results', action='store_true', default=False,
                         help='get results of the all encoder layers')
     return parser.parse_args()
@@ -52,9 +52,9 @@ def _parse():
 class VideoEmbeddingExtractor():
     def __init__(self,
                  face_detect_method,
-                 extfeat_method,
+                 encoder_type,
                  face_detect_model=None,
-                 extfeat_model=None,
+                 encoder_model=None,
                  device='cpu',
                  max_proc_frames=100,
                  face_size=160,
@@ -70,7 +70,7 @@ class VideoEmbeddingExtractor():
                     model=face_detect_model,
                     )
         elif face_detect_method in ['facenet']:
-            post_process = True if extfeat_method == 'facenet' else False
+            post_process = True if encoder_type == 'facenet' else False
             self.face_detector = FacenetFaceDetector(
                     face_size=face_size,
                     device=device,
@@ -79,24 +79,24 @@ class VideoEmbeddingExtractor():
         else:
             raise ValueError('invalid face_detect_method: {}'.format(face_detect_method))
 
-        if extfeat_method == 'VGGFace2':
+        if encoder_type == 'VGGFace2':
             self.feat_extractor = VGGFace2Encoder(
-                    model_path=extfeat_model,
+                    model_path=encoder_model,
                     arch_type='senet50_ft',
                     device=device
                     )
-        elif extfeat_method == 'facenet':
+        elif encoder_type == 'facenet':
             self.feat_extractor = FacenetEncoder(
                     device=device
                     )
-        elif extfeat_method == 'CLIP':
+        elif encoder_type == 'CLIP':
             self.feat_extractor = CLIPEncoder(
                     arch_type='ViT-L/14',
                     get_layer_results=get_layer_results,
                     device=device
                     )
         else:
-            raise ValueError('invalid extfeat_method: {}'.format(extfeat_method))
+            raise ValueError('invalid encoder_type: {}'.format(encoder_type))
 
     def split_sublist(self, images, max_proc_frames, outfs=None):
         subs = []
@@ -183,9 +183,9 @@ def _main():
     print('prepare extractor')
     extractor = VideoEmbeddingExtractor(
             args.face_detect_method,
-            args.extfeat_method,
+            args.encoder_type,
             face_detect_model=args.face_detect_model,
-            extfeat_model=args.extfeat_model,
+            encoder_model=args.encoder_model,
             face_size=args.face_size,
             device=device,
             fps=args.fps,
@@ -201,6 +201,7 @@ def _main():
             infs.append(f)
 
     # process
+    print('start feature extraction')
     for inf in tqdm(infs):
         clip_id = os.path.splitext(os.path.basename(inf))[0]
         outf = os.path.join(args.outd, clip_id+'.npy')

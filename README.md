@@ -11,15 +11,23 @@ Please read `LICENSE`  before using scripts.
 ```
 pip install -r requirements
 ```
-2. Run setup scripts
 
-Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if you have CMU-MOSI/CMU-MOSEI data.
+2. Save pretrained WavLM model
+```
+(download WavLM Large model from https://github.com/microsoft/unilm/tree/master/wavlm)
+cp ./WavLM-Large.pt conf/pretrained_enc
+
+```
+
+3. Run setup scripts
+
+Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if you have CMU-MOSI/CMU-MOSEI corpora.
 ```
 ./setup_cmumosi.sh
 ./setup_cmumosei.sh
 ```
 
-3. Run training script
+4. Run training script
 ```
 ./train.sh
 ```

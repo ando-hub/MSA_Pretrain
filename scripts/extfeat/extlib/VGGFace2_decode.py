@@ -1,10 +1,5 @@
 #!/usr/bin/env python
-import pdb
-import argparse
-import os
-import sys
 import torch
-import torch.nn as nn
 import numpy as np
 
 from extlib.VGGFace2.models import resnet as ResNet
@@ -12,6 +7,7 @@ from extlib.VGGFace2.models import senet as SENet
 from extlib.VGGFace2.utils import load_state_dict
 from torchvision import transforms as transforms
 
+torch.use_deterministic_algorithms(True)
 N_IDENTITY = 8631  # the number of identities in VGGFace2 for which ResNet and SENet are trained
 
 
@@ -28,12 +24,12 @@ class VGGFace2Encoder():
         self.model.eval()
         self.model.to(self.device)
 
-        self.mean_bgr =  torch.tensor([91.4953, 103.8827, 131.0912]).unsqueeze(-1).unsqueeze(-1)  # from resnet50_ft.prototxt
+        self.mean_bgr = torch.tensor([91.4953, 103.8827, 131.0912]).unsqueeze(-1).unsqueeze(-1)  # from resnet50_ft.prototxt
         self.resize = transforms.Compose(
                 [
                     transforms.ToPILImage(),
                     transforms.Resize(256),
-                    transforms.CenterCrop(224), 
+                    transforms.CenterCrop(224),
                     transforms.ToTensor()
                     ]
                 )
@@ -47,7 +43,7 @@ class VGGFace2Encoder():
     def extract(self, images):
         transformed_images = [self.transform_image(im) for im in images if im is not None]
         image_indices = [i for i, im in enumerate(images) if im is not None]
-        
+
         embeds = np.zeros((len(images), self.embed_size), dtype=np.float32)
         if transformed_images:
             x = torch.stack(transformed_images).to(device=self.device)
@@ -57,7 +53,7 @@ class VGGFace2Encoder():
             for i, yi in zip(image_indices, y):
                 embeds[i] = yi
         return embeds
-   
+
     def transform_image(self, image):
         if isinstance(image, torch.Tensor):
             image = self.resize_torch(image)
@@ -65,6 +61,3 @@ class VGGFace2Encoder():
         else:
             image = self.resize(image) * 255    # [0, 1] -> [0, 255]
         return image - self.mean_bgr.expand(-1, image.shape[1], image.shape[2])
-
-if __name__ == '__main__':
-    main()

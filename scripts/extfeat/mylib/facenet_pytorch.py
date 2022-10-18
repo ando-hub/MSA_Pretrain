@@ -2,11 +2,13 @@ import pdb
 import numpy as np
 import torch
 import cv2
-from PIL import Image
-from torchvision import transforms as transforms
 from facenet_pytorch import InceptionResnetV1, MTCNN
 
 from mylib.util import convert_cv2topil, convert_piltocv2
+
+torch.use_deterministic_algorithms(True)
+# ignore MTCNN warnings that raises when detects no face in the input image
+np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
 
 class FacenetFaceDetector():
@@ -66,7 +68,7 @@ class FacenetEncoder():
                 embeds[i] = yi
         pdb.set_trace()
         return embeds
-    
+
     def preproc(self, image):
         if isinstance(image, torch.Tensor):
             return image
