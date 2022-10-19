@@ -1,10 +1,7 @@
-import pdb
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from mytorch.model.attentive_pooling import AttentivePooling
 from mytorch.model.gate_pooling import GatePooling
-from mytorch.model.modal_combination import get_modal_combination
 
 
 class MultiModalDecoder(nn.Module):
@@ -24,7 +21,7 @@ class MultiModalDecoder(nn.Module):
 
         decoder = []
         for i in range(dec_layer):
-            _in_dim = attn_dim if i == 0  else dec_dim
+            _in_dim = attn_dim if i == 0 else dec_dim
             _out_dim = out_dim if i == dec_layer-1 else dec_dim
             decoder.append(nn.Linear(_in_dim, _out_dim))
             if i != dec_layer-1:
@@ -32,10 +29,6 @@ class MultiModalDecoder(nn.Module):
                 decoder.append(nn.ReLU())
                 decoder.append(nn.Dropout(dropout_rate))
         self.dec = nn.Sequential(*decoder)
-
-        self.modal_selective_training = True if lossfunc == 'most' else False
-        if self.modal_selective_training:
-            self.comb = get_modal_combination()
 
     def forward(self, x):
         """
@@ -48,11 +41,7 @@ class MultiModalDecoder(nn.Module):
         if self.pooling == 'sap':
             x, att = self.attn(x, torch.ones(x.shape[0], device=x.device)*3, need_weights=True)
         elif self.pooling == 'gate':
-            if self.training and self.modal_selective_training:
-                given_weights = self.comb.unsqueeze(0).expand(x.shape[0], -1, -1).to(x.device)
-            else:
-                given_weights = None
-            x, att = self.attn(x, need_weights=True, given_weights=given_weights)
+            x, att = self.attn(x, need_weights=True)
         elif self.pooling == 'concat':
             x = x.view(x.shape[0], -1)
             att = None

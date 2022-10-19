@@ -1,12 +1,9 @@
 import torch
-import torch.nn.functional as F
 import numpy as np
-import pdb
 
 
 def get_score(y, t, classification_type):
     assert classification_type in ['binary', 'multiclass', 'regress']
-    # classification_type = 'binary' if len(t.shape) > 1 else 'multiclass'
 
     if classification_type == 'binary':
         match = (torch.sigmoid(y) > 0.5) == t
@@ -41,4 +38,3 @@ def get_total_score(scores):
     for i, m in enumerate(label_matches):
         res['score/accuracy_class{}'.format(i)] = m/label_elems
     return res
-

@@ -1,18 +1,9 @@
-# coding:utf-8
-
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import pdb
-from mytorch.model.modal_combination import get_modal_combination
-
-IGNORE_INDEX = -1
 
 
 class MultiLabelSoftMarginLoss(nn.CrossEntropyLoss):
-    def __init__(self, weight=None, ignore_index=IGNORE_INDEX, reduction='mean'):
+    def __init__(self, weight=None, ignore_index=-1, reduction='mean'):
         super(MultiLabelSoftMarginLoss, self).__init__(
                 weight=weight, ignore_index=ignore_index, reduction=reduction
                 )

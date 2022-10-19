@@ -1,9 +1,9 @@
 #!/bin/bash
 
-stage=0
-stop_stage=1
+stage=3
+stop_stage=5
 
-gpuid=-1                # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
+gpuid=3                # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
 extfeat_batchsize=4     # proc every $batchsize files in audio/text feature extraction
 
 # cmumosi dataset path
@@ -22,8 +22,9 @@ label_format='sentiment_regress'    # sentiment_regress, sentiment_class, or emo
 
 # pre-trained encoder setup
 video_encoder='CLIP'
-audio_encoder='WavLM'
-text_encoder='BERT_Large'
+audio_encoder='wavlm'
+text_encoder='bert-large'
+wavlm_model_path='./conf/pretrained_enc/WavLM-Large.pt'
 
 
 if [ $stage -le 0 ]; then
@@ -95,15 +96,14 @@ if [ $stage -le 3 ]; then
     echo "frame resampling, face detection and feature extraction from video ..."
     python scripts/extfeat/extract_video_embedding.py \
         $output_dir/video/original \
-        $output_dir/feat/video/$video_encoder \
+        $output_dir/feat/video/pretrained \
+        --gpuid $gpuid \
+        --encoder-type $video_encoder \
         --fps 3 \
-        --face-detect-method facenet \
-        --extfeat-method $video_encoder \
         --face-outd $output_dir/video/face \
         --image-outd $output_dir/video/image \
-        --gpuid $gpuid \
-        --get-layer-results
         --face-size 256 \
+        --get-layer-results
 
 fi
 
@@ -112,21 +112,13 @@ if [ $stage -le 4 ] && [ $stop_stage -ge 4 ]; then
     echo "feature extraction from audio ..."
     python scripts/extfeat/extract_audio_embedding.py \
         $output_dir/audio/original \
-        $output_dir/feat/audio/tmp_$audio_encoder \
+        $output_dir/feat/audio/pretrained \
         --gpuid $gpuid \
-        --model $audio_encoder \
+        --encoder-type $audio_encoder \
+        --wavlm-model-path $wavlm_model_path \
+        -r 10 \
         --get-layer-results \
-        --batchsize $batchsize
-
-    # resample audio (20ms frame = 50fps -> 5fps)
-    # TODO: implement resample func in extract_audio_embedding.py
-    echo "resampling audio features ..."
-    python scripts/extfeat/resamp_npy.py \
-        $output_dir/feat/audio/tmp_$audio_encoder \
-        $output_dir/feat/audio/$audio_encoder \
-        -r 10
-    
-    rm -rf $output_dir/feat/audio/tmp_$audio_encoder 
+        --batchsize $extfeat_batchsize
 fi
 
 if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
@@ -134,9 +126,9 @@ if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
     echo "tokenize, indexing and feature extraction from text ..."
     python scripts/extfeat/extract_text_embedding.py \
         $output_dir/text/original \
-        $output_dir/feat/text/$text_encoder \
+        $output_dir/feat/text/pretrained \
         --gpuid $gpuid \
-        --model-type $text_encoder \
+        --encoder-type $text_encoder \
         --token-outd $output_dir/text/token_${text_encoder} \
         --get-layer-results \
         --batchsize $extfeat_batchsize
@@ -147,7 +139,7 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
     # mmdatasdk (CMU-MOSI official features): FACET 35dim, COVEREP 74dim, GloVe 300dim
     echo "mmdatasdk feature preparation ..."
     python scripts/preproc/convert_pickle2npy.py \
-        $cmumosi_pickle \
+        $cmumosi_feat_mmdatasdk \
         $output_dir/feat/video/mmdatasdk_noalign \
         $output_dir/feat/audio/mmdatasdk_noalign \
         $output_dir/feat/text/mmdatasdk_noalign 
@@ -155,7 +147,7 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
     # MMSA (https://github.com/thuiar/MMSA): FACET 35dim, COVEREP 74dim, BERT-Base 768dim
     echo "MMSA feature preparation ..."
     python scripts/preproc/convert_pickle2npy.py \
-        $cmumosi_pickle_mmsa \
+        $cmumosi_feat_mmsa \
         $output_dir/feat/video/mmsa_noalign \
         $output_dir/feat/audio/mmsa_noalign \
         $output_dir/feat/text/mmsa_noalign 

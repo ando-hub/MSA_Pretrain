@@ -105,12 +105,12 @@ if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
     echo "frame resampling, face detection and feature extraction from video ..."
     python scripts/extfeat/extract_video_embedding.py \
         $output_dir/video/original \
-        $output_dir/feat/video/pretrained_dbg2 \
+        $output_dir/feat/video/pretrained \
         --gpuid $gpuid \
         --encoder-type $video_encoder \
         --fps 3 \
-        --face-outd $output_dir/video/face_dbg2 \
-        --image-outd $output_dir/video/image_dbg2 \
+        --face-outd $output_dir/video/face \
+        --image-outd $output_dir/video/image \
         --face-size 256 \
         --get-layer-results
 fi

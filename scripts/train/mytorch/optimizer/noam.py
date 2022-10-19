@@ -1,6 +1,3 @@
-import torch
-
-
 class NoamOpt:
     """ learning rate scheduler used in the transformer
     See https://arxiv.org/pdf/1706.03762.pdf
@@ -32,7 +29,7 @@ class NoamOpt:
             step = self._step
         return self.factor * \
             (self.model_size ** (-0.5) *
-            min(step ** (-0.5), step * self.warmup ** (-1.5)))
+             min(step ** (-0.5), step * self.warmup ** (-1.5)))
 
     def zero_grad(self):
         self.optimizer.zero_grad()

@@ -3,20 +3,21 @@
 gpuid=0
 num_workers=12
 
-dataset=cmumosei
+dataset=cmumosi                    # cmumosi / cmumosei
 input_modals='videoaudiotext'
 
-feat=pretrained         # embed / mmdatasdk / mmsa
+feat=pretrained                     # pretrained / mmdatasdk / mmsa
 label=sentiment_regress
 
 video_data=./data/dataset/$dataset/feat/video/$feat
 audio_data=./data/dataset/$dataset/feat/audio/$feat
 text_data=./data/dataset/$dataset/feat/text/$feat
 train_list=./data/dataset/$dataset/label/$label/train.txt
-dev_list=./data/dataset/$dataset/label/$label/valid.txt
+valid_list=./data/dataset/$dataset/label/$label/valid.txt
 test_list=./data/dataset/$dataset/label/$label/test.txt
 
 out_base="./data/trained/$label/$dataset/$feat"
+out_merge_base="./data/trained_merge/$label/$dataset/$feat"
 
 config_models='
 ./conf/model/enc1x128sap4dec1_gate_dec2.yaml
@@ -33,8 +34,10 @@ config_trains='
 '
 
 config_feats="
-./conf/feat/layerbestmosei.yaml
+./conf/feat/layerbestmosi.yaml
 "
+#./conf/feat/layerbestmosi.yaml
+#./conf/feat/layerbestmosei.yaml
 #./conf/feat/layerall.yaml
 #./conf/feat/layer23.yaml
 #./conf/feat/layer22.yaml
@@ -70,33 +73,30 @@ for config_model in $config_models ; do
                 outd="$out_base/input_${input_modal}.model_`basename $config_model .yaml`.train_`basename $config_train .yaml`.feat_`basename $config_feat .yaml`"
 
                 modeld="$outd/model"
-                attnd="$outd/attention"
-                embd="$outd/embedding"
                 rsltd="$outd/result"
                 logf="$outd/train.log"
                 
                 opt=""
                 if [ -e $modeld/model.pt ]; then
+                    # resume
                     opt="$opt --init-model-dir $modeld"
                 fi
 
                 python scripts/train/train.py \
                     --model-save-dir $modeld \
-                    --attn-save-dir $attnd \
-                    --embed-save-dir $embd \
                     --result-dir $rsltd \
+                    -l $logf \
+                    --loglevel debug \
+                    --gpu $gpuid \
+                    --num-workers $num_workers \
                     --config-train $config_train \
                     --config-model $config_model \
                     --config-feat $config_feat \
-                    --gpu $gpuid \
-                    --num-workers $num_workers \
-                    -l $logf \
-                    --loglevel debug \
                     --audio-data $audio_data \
                     --video-data $video_data \
                     --text-data $text_data \
                     --trainset-list $train_list \
-                    --devset-list $dev_list \
+                    --validset-list $valid_list \
                     --testset-list $test_list \
                     --input-modal $input_modal \
                     $opt
@@ -105,3 +105,5 @@ for config_model in $config_models ; do
     done
 done
 
+# evaluate average scores of trials (MAE, Corr, Acc, F1)
+python scripts/util/merge_score.py $out_base $out_merge_base

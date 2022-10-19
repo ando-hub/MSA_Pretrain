@@ -6,10 +6,3 @@ lrstep: 0
 seed: 1
 max_epoch: 50
 class_weight: false
-
-modal_masking:
-    exec: false
-    ep_start_2modal: 5
-    ep_end_2modal: 15
-    ep_start_3modal: 10
-    ep_end_3modal: 20

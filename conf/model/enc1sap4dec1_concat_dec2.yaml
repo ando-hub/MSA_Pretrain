@@ -43,4 +43,3 @@ multimodal_decoder:
 
 loss:
     lossfunc: 'ce'
-    most_loss_weight: 0.1

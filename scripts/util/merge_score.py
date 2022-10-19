@@ -1,8 +1,6 @@
 import re
 import argparse
 import os
-import csv
-import pdb
 
 
 def _parse():
@@ -65,7 +63,7 @@ if __name__ == '__main__':
             add_result(result_dic[setup]['tst'], os.path.join(dpath, 'result.tst.txt'))
 
     for setup, _rd in result_dic.items():
-        print(setup, len(_rd['tst']['reg_regress']['MAE']))
+        print(setup, '# merged: {}'.format(len(_rd['tst']['reg_regress']['MAE'])))
         for dset, task_results in _rd.items():
             outf = os.path.join(args.outd, setup, 'result', 'result.{}.txt'.format(dset))
             os.makedirs(os.path.dirname(outf), exist_ok=True)

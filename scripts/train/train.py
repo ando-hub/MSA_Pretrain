@@ -3,7 +3,6 @@ import os
 import glob
 import time
 import copy
-import pdb
 from tqdm import tqdm
 from collections import defaultdict
 import pandas as pd
@@ -15,7 +14,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.autograd import detect_anomaly
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from timm.scheduler import CosineLRScheduler
@@ -26,32 +24,30 @@ from mytorch.scoring import get_score, get_total_score
 from mytorch.writer import write_log
 from mytorch.util import sec2hms, update_link
 from mytorch.loss.multilabel_softmargin import MultiLabelSoftMarginLoss
-from mytorch.loss.modal_selective import ModalSelectiveTrainingLoss
-from mytorch.loss.modal_metric import ModalMetricLoss
-from mytorch.loss.modal_metric_ce import ModalMetricCELoss
 from mytorch.optimizer.noam import NoamOpt
 from mytorch.optimizer.util import get_optimizer_state, set_optimizer_state
 from mytorch.model.multimodal_classifier import MultiModalClassifier
 from mytorch.eval_performance import eval_performance
 from mytorch.plot_modal_weight import plot_modal_weight
-from mytorch.modal_masking import ModalMasking
 
 
 INPUT_MODAL = ['video', 'audio', 'text', 'videoaudio', 'videotext', 'audiotext', 'videoaudiotext']
 
 
 def _parse():
-    parser = argparse.ArgumentParser(description=u'train multimodal emotion recognition')
+    parser = argparse.ArgumentParser(description=u'train multimodal sentiment analysis')
     parser.add_argument('--model-save-dir', type=str, help='output model dir')
-    parser.add_argument('--attn-save-dir', type=str, help='output attention dir')
     parser.add_argument('--result-dir', type=str, help='output result file')
-    parser.add_argument('--config-train', metavar='yaml', help='config.yaml')
-    parser.add_argument('--config-model', metavar='yaml', help='config.yaml')
-    parser.add_argument('--config-feat', metavar='yaml', help='config.yaml')
+    parser.add_argument('--config-train', metavar='yaml',
+                        help='training config: ./conf/train/*.yaml')
+    parser.add_argument('--config-model', metavar='yaml',
+                        help='model config: ./conf/model/*.yaml')
+    parser.add_argument('--config-feat', metavar='yaml',
+                        help='feature config: ./conf/feat/*.yaml')
     parser.add_argument('--gpu', type=int, default=-1,
-                        help=u'GPU id (if <0 then use cpu) [-1]')
-    parser.add_argument('--num-workers', type=int, default=0,
-                        help=u'number of workers in dataloader [0]')
+                        help=u'GPU id (if <0 then use cpu)')
+    parser.add_argument('--num-workers', type=int, default=1,
+                        help=u'number of workers in dataloader')
     # --- log config ---
     parser.add_argument('-l', metavar='logf', help='output log file')
     parser.add_argument('--loglevel',
@@ -59,40 +55,42 @@ def _parse():
                         default='info', help='output log level')
     # --- data config ---
     parser.add_argument('--video-data', type=str,
-                        help='input test acou-features')
+                        help='input video feature dir')
     parser.add_argument('--audio-data', type=str,
-                        help='input training acou-features')
+                        help='input audio feature dir')
     parser.add_argument('--text-data', type=str,
-                        help='input development acou-features')
+                        help='input text feature dir')
     # --- dataset/label config ---
     parser.add_argument('--trainset-list', type=str,
-                        help='input test acou-features')
-    parser.add_argument('--devset-list', type=str,
-                        help='input test acou-features')
+                        help='input trainset list')
+    parser.add_argument('--validset-list', type=str,
+                        help='input validationset list')
     parser.add_argument('--testset-list', type=str,
-                        help='input test acou-features')
+                        help='input testset list')
     # --- method config ---
     parser.add_argument('--input-modal',
                         choices=INPUT_MODAL,
-                        default = 'audiovideotext',
-                        help=u'input modal')
+                        default='videoaudiotext',
+                        help=u'input modality: {}'.format(', '.join(INPUT_MODAL)))
     # --- fine-tuning option ---
     parser.add_argument('--init-model', type=str,
-                        help=u'initial_model.pt [None]')
+                        help=u'initial_model.pt')
     parser.add_argument('--init-model-dir', type=str,
-                        help=u'initial_model dir [None]')
+                        help=u'initial_model dir')
     parser.add_argument('--finetune', action='store_true', default=False,
-                        help=u'initial_model.pt [None]')
+                        help=u'finetune pretrained --init-model from 1st epoch')
     parser.add_argument('--test-only', action='store_true', default=False,
-                        help=u'test only (input model: args.modelf) [False]')
-    parser.add_argument('--embed-save-dir', type=str, help='output embedding dir (test-only)')
+                        help=u'skip training and run inference')
+    parser.add_argument('--attn-save-dir', type=str,
+                        help='output attention dir (available when --test-only)')
+    parser.add_argument('--embed-save-dir', type=str,
+                        help='output embedding dir (available when --test-only)')
     return parser.parse_args()
 
 
 def proc_1ep(
         dataloader, model, lossfunc=None, optimizer=None, device='cpu', mode='eval',
-        result_file=None, attn_dir=None, embed_dir=None, modal_masking=None,
-        ):
+        result_file=None, attn_dir=None, embed_dir=None):
     if mode == 'train':
         model.train()
     else:
@@ -110,8 +108,6 @@ def proc_1ep(
     for x, t, uid in tqdm(dataloader, desc='[{}]'.format(mode)):
         # prepare input/output tensors
         x = [None if xi is None else xi.to(device) for xi in x]
-        if modal_masking:
-            x = modal_masking(x)
         t = t.to(device)
 
         # decode
@@ -126,12 +122,7 @@ def proc_1ep(
 
         # calculate loss
         if lossfunc:
-            if isinstance(lossfunc, ModalSelectiveTrainingLoss):
-                loss, y = lossfunc(y, t, att[-1])
-            elif isinstance(lossfunc, ModalMetricLoss) or isinstance(lossfunc, ModalMetricCELoss):
-                loss = lossfunc(y, t, emb)
-            else:
-                loss = lossfunc(y, t)
+            loss = lossfunc(y, t)
             if not torch.isnan(loss):
                 if mode == 'train':
                     loss.backward()
@@ -171,8 +162,8 @@ def proc_1ep(
                 rslt_dic['actu_nz2'].extend(nonzero_t.tolist())
                 rslt_dic['pred_nz2'].extend(nonzero_y.tolist())
                 # binary classification
-                rslt_dic['actu_2'].extend((t>=0).cpu().detach().tolist())
-                rslt_dic['pred_2'].extend((y>=0).cpu().detach().tolist())
+                rslt_dic['actu_2'].extend((t >= 0).cpu().detach().tolist())
+                rslt_dic['pred_2'].extend((y >= 0).cpu().detach().tolist())
                 # 3/5/7-class classification
                 rslt_dic['actu_3'].extend(t.cpu().detach().numpy().clip(-1, 1).round().tolist())
                 rslt_dic['pred_3'].extend(y.cpu().detach().numpy().clip(-1, 1).round().tolist())
@@ -285,9 +276,9 @@ def _main(args):
                 )
     else:
         trn_loader = None
-    if args.devset_list:
+    if args.validset_list:
         dev_dataset = MultimodalDataset(
-                args.devset_list,
+                args.validset_list,
                 args.video_data, args.audio_data, args.text_data,
                 args.input_modal,
                 train_param['video_feat'],
@@ -356,7 +347,7 @@ def _main(args):
             optimizer = optim.RAdam(param_set, lr=train_param['lr'])
         elif train_param['optimizer'] == 'noam':
             optimizer = NoamOpt(args.hidden_size, args.noam_scale, args.noam_warmup_steps,
-                torch.optim.Adam(param_set, lr=0, betas=(0.9, 0.98), eps=1e-9))
+                                torch.optim.Adam(param_set, lr=0, betas=(0.9, 0.98), eps=1e-9))
         else:
             raise ValueError(train_param['optimizer'])
 
@@ -375,63 +366,17 @@ def _main(args):
                 w = torch.tensor(np.stack(class_weight).T, dtype=torch.float32).to(device)
             else:
                 w = None
-            if model_param['loss']['lossfunc'] == 'ce':
-                lossfunc = MultiLabelSoftMarginLoss(weight=w)
-            elif model_param['loss']['lossfunc'] == 'metric':
-                lossfunc = ModalMetricLoss(
-                        MultiLabelSoftMarginLoss(weight=w),
-                        model_param['loss']['metric_loss_weight'],
-                        )
-            elif model_param['loss']['lossfunc'] == 'metricce':
-                lossfunc = ModalMetricCELoss(
-                        MultiLabelSoftMarginLoss(weight=w),
-                        model_param['loss']['metric_loss_weight'],
-                        )
-            elif model_param['loss']['lossfunc'] == 'most':
-                lossfunc = ModalSelectiveTrainingLoss(
-                        MultiLabelSoftMarginLoss(weight=w, reduction='none'),
-                        model_param['loss']['most_loss_weight'],
-                        )
-            lossfunc_eval = MultiLabelSoftMarginLoss(weight=w)
+            lossfunc = MultiLabelSoftMarginLoss(weight=w)
         elif model_param['classification_type'] == 'multiclass':
             if class_weight:
                 w = torch.tensor(class_weight, dtype=torch.float32).to(device)
             else:
                 w = None
-            if model_param['loss']['lossfunc'] == 'ce':
-                lossfunc = nn.CrossEntropyLoss(weight=w)
-            elif model_param['loss']['lossfunc'] == 'metric':
-                lossfunc = ModalMetricLoss(
-                        nn.CrossEntropyLoss(weight=w),
-                        model_param['loss']['metric_loss_weight'],
-                        )
-            elif model_param['loss']['lossfunc'] == 'metricce':
-                lossfunc = ModalMetricCELoss(
-                        nn.CrossEntropyLoss(weight=w),
-                        model_param['loss']['metric_loss_weight'],
-                        )
-            elif model_param['loss']['lossfunc'] == 'most':
-                lossfunc = ModalSelectiveTrainingLoss(
-                        nn.CrossEntropyLoss(weight=w, reduction='none'),
-                        model_param['loss']['most_loss_weight'],
-                        )
-            lossfunc_eval = nn.CrossEntropyLoss(weight=w)
+            lossfunc = nn.CrossEntropyLoss(weight=w)
         elif model_param['classification_type'] == 'regress':
             lossfunc = nn.L1Loss()
-            lossfunc_eval = lossfunc
         else:
             raise ValueError('invalid classification_type: {}'.format(model_param['classification_type']))
-
-        # prepare modal masking instance
-        if train_param['modal_masking']['exec']:
-            modal_masking = ModalMasking(
-                    train_param['modal_masking']['ep_start_2modal'],
-                    train_param['modal_masking']['ep_end_2modal'],
-                    train_param['modal_masking']['ep_start_2modal'],
-                    train_param['modal_masking']['ep_end_2modal'],
-                    )
-        else:
-            modal_masking = None
 
         logger.info('prepare training logger ...')
         log_base = os.path.join(args.model_save_dir, 'log', datetime.now().strftime('%Y%m%d.%H%M%S'))
@@ -468,36 +413,20 @@ def _main(args):
                 logger.info('Ep: {}/{} skip training (resume)'.format(ep, train_param['max_epoch']))
                 continue
 
-            # switch lossfunc on epochs in modal selective training
-            if isinstance(lossfunc, ModalSelectiveTrainingLoss):
-                if ep % model_param['loss']['most_loss_freq'] == 0:
-                    _lossfunc = lossfunc
-                    model.dec.modal_selective_training = True
-                else:
-                    _lossfunc = lossfunc_eval
-                    model.dec.modal_selective_training = False
-            else:
-                _lossfunc = lossfunc
-
-            # modal masking
-            if modal_masking:
-                modal_masking.set_epoch(ep)
-
             # run 1 epoch
             dev_resultf = os.path.join(args.result_dir, 'result.dev.{:04d}.csv'.format(ep))
             tst_resultf = os.path.join(args.result_dir, 'result.tst.{:04d}.csv'.format(ep))
             dev_scoref = os.path.join(args.result_dir, 'result.dev.{:04d}.txt'.format(ep))
             tst_scoref = os.path.join(args.result_dir, 'result.tst.{:04d}.txt'.format(ep))
             model, trn_loss, trn_score = proc_1ep(
-                    trn_loader, model, _lossfunc, optimizer, device, mode='train',
-                    modal_masking=modal_masking
+                    trn_loader, model, lossfunc, optimizer, device, mode='train',
                     )
             _, dev_loss, dev_score = proc_1ep(
-                    dev_loader, model, lossfunc_eval, optimizer, device, mode='eval',
+                    dev_loader, model, lossfunc, optimizer, device, mode='eval',
                     result_file=dev_resultf
                     )
             _, tst_loss, tst_score = proc_1ep(
-                    tst_loader, model, lossfunc_eval, optimizer, device, mode='eval',
+                    tst_loader, model, lossfunc, optimizer, device, mode='eval',
                     result_file=tst_resultf
                     )
             eval_performance(dev_resultf, dev_scoref)

@@ -1,10 +1,8 @@
 import os
-import glob
 import torch
 import numpy as np
 import h5py
 from mytorch.spec_augment import spec_augment
-from mytorch.sliding_window import sliding_window
 
 
 def str2label(v):
@@ -42,13 +40,11 @@ class MultimodalDataset(torch.utils.data.Dataset):
             fids = [fid for fid in fids if self.validate_fid(fid, self.text_data)]
         self.fids = sorted(fids)
 
-
     def validate_fid(self, fid, data):
         if os.path.isfile(data):
             raise NotImplementedError
         else:
             return os.path.exists(os.path.join(data, fid+'.npy'))
-
 
     def load_data(self, data, fid):
         if os.path.isfile(data):
@@ -82,39 +78,18 @@ class MultimodalDataset(torch.utils.data.Dataset):
         if self.video_data:
             data_v = self.load_data(self.video_data, fid)
             data_v = self.slice_layer(data_v, self.video_feat_opt['slice']['layer'])
-            if self.video_feat_opt['sliding_window']['window_size'] > 1:
-                data_v = sliding_window(
-                        data_v,
-                        self.video_feat_opt['sliding_window']['window_size'],
-                        self.video_feat_opt['sliding_window']['window_shift'],
-                        self.video_feat_opt['sliding_window']['proc']
-                        )
             if not self.iseval:
                 data_v = spec_augment(data_v, **self.video_feat_opt['spec_augment'])
 
         if self.audio_data:
             data_a = self.load_data(self.audio_data, fid)
             data_a = self.slice_layer(data_a, self.audio_feat_opt['slice']['layer'])
-            if self.audio_feat_opt['sliding_window']['window_size'] > 1:
-                data_a = sliding_window(
-                        data_a,
-                        self.audio_feat_opt['sliding_window']['window_size'],
-                        self.audio_feat_opt['sliding_window']['window_shift'],
-                        self.audio_feat_opt['sliding_window']['proc']
-                        )
             if not self.iseval:
                 data_a = spec_augment(data_a, **self.audio_feat_opt['spec_augment'])
 
         if self.text_data:
             data_t = self.load_data(self.text_data, fid)
             data_t = self.slice_layer(data_t, self.text_feat_opt['slice']['layer'])
-            if self.text_feat_opt['sliding_window']['window_size'] > 1:
-                data_t = sliding_window(
-                        data_t,
-                        self.text_feat_opt['sliding_window']['window_size'],
-                        self.text_feat_opt['sliding_window']['window_shift'],
-                        self.text_feat_opt['sliding_window']['proc']
-                        )
             if not self.iseval:
                 data_t = spec_augment(data_t, **self.text_feat_opt['spec_augment'])
         return (data_v, data_a, data_t), label, fid
