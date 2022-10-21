@@ -1,12 +1,12 @@
 #!/bin/bash
 
-gpuid=0
+gpuid=3
 num_workers=12
 
 dataset=cmumosi                    # cmumosi / cmumosei
 input_modals='videoaudiotext'
 
-feat=pretrained                     # pretrained / mmdatasdk / mmsa
+feat=mmsa_noalign                     # pretrained / mmdatasdk_noalign / mmsa_noalign
 label=sentiment_regress
 
 video_data=./data/dataset/$dataset/feat/video/$feat
@@ -34,11 +34,11 @@ config_trains='
 '
 
 config_feats="
-./conf/feat/layerbestmosi.yaml
+./conf/feat/layer23.yaml
 "
+#./conf/feat/layerall.yaml
 #./conf/feat/layerbestmosi.yaml
 #./conf/feat/layerbestmosei.yaml
-#./conf/feat/layerall.yaml
 #./conf/feat/layer23.yaml
 #./conf/feat/layer22.yaml
 #./conf/feat/layer21.yaml

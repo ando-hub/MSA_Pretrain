@@ -1,21 +1,16 @@
 #!/bin/bash
 
-stage=3
-stop_stage=5
+stage=0
+stop_stage=100
 
-gpuid=3                # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
+gpuid=2                 # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
 extfeat_batchsize=4     # proc every $batchsize files in audio/text feature extraction
 
 # cmumosi dataset path
-#cmumosi_root='./data/src/CMU-MOSI/Raw'
-#cmumosi_label_csd='./data/src/CMU-MOSI/mmdatasdk/CMU-MOSI/labels/CMU_MOSI_Opinion_Labels.csd'
-#cmumosi_feat_mmdatasdk='./data/src/CMU-MOSI/processed_data/cmu-mosi/seq_length_50/mosi_data_noalign.pkl'
-#cmumosi_feat_mmsa='./data/src/CMU-MOSI/MMSA/Processed/unaligned_50.pkl'
-cmumosi_root='/nfs/data/open/CMU-MOSI/Raw'
-cmumosi_label_csd='/nfs/data/open/CMU-MOSI/mmdatasdk/CMU-MOSI/labels/CMU_MOSI_Opinion_Labels.csd'
-cmumosi_feat_mmdatasdk='/nfs/data/open/CMU-MOSI/processed_data/cmu-mosi/seq_length_50/mosi_data_noalign.pkl'
-cmumosi_feat_mmsa='/home/ando/work/220613_MMER_MMSA/data/MOSI/Processed/unaligned_50.pkl'
-
+cmumosi_root='./data/src/CMU-MOSI/Raw'
+cmumosi_label_csd='./data/src/CMU-MOSI/mmdatasdk/CMU-MOSI/labels/CMU_MOSI_Opinion_Labels.csd'
+cmumosi_feat_mmdatasdk='./data/src/CMU-MOSI/processed_data/cmu-mosi/seq_length_50/mosi_data_noalign.pkl'
+cmumosi_feat_mmsa='./data/src/CMU-MOSI/MMSA/Processed/unaligned_50.pkl'
 
 output_dir='./data/dataset/cmumosi'
 label_format='sentiment_regress'    # sentiment_regress, sentiment_class, or emo_class

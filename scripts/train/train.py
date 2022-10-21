@@ -36,55 +36,57 @@ INPUT_MODAL = ['video', 'audio', 'text', 'videoaudio', 'videotext', 'audiotext',
 
 def _parse():
     parser = argparse.ArgumentParser(description=u'train multimodal sentiment analysis')
-    parser.add_argument('--model-save-dir', type=str, help='output model dir')
-    parser.add_argument('--result-dir', type=str, help='output result file')
-    parser.add_argument('--config-train', metavar='yaml',
-                        help='training config: ./conf/train/*.yaml')
-    parser.add_argument('--config-model', metavar='yaml',
-                        help='model config: ./conf/model/*.yaml')
-    parser.add_argument('--config-feat', metavar='yaml',
-                        help='feature config: ./conf/feat/*.yaml')
-    parser.add_argument('--gpu', type=int, default=-1,
-                        help=u'GPU id (if <0 then use cpu)')
-    parser.add_argument('--num-workers', type=int, default=1,
-                        help=u'number of workers in dataloader')
+    parser.add_argument('--model-save-dir', metavar='dir', type=str,
+                        help='output model dir')
+    parser.add_argument('--result-dir', metavar='dir', type=str,
+                        help='output result file')
     # --- log config ---
     parser.add_argument('-l', metavar='logf', help='output log file')
     parser.add_argument('--loglevel',
                         choices=['error', 'warning', 'info', 'debug'],
                         default='info', help='output log level')
-    # --- data config ---
-    parser.add_argument('--video-data', type=str,
+    # --- setup config ---
+    parser.add_argument('--input-modal', choices=INPUT_MODAL, default='videoaudiotext',
+                        help=u'input modality')
+    parser.add_argument('--config-feat', metavar='yaml',
+                        help='feature config: ./conf/feat/*.yaml')
+    parser.add_argument('--config-model', metavar='yaml',
+                        help='model config: ./conf/model/*.yaml')
+    parser.add_argument('--config-train', metavar='yaml',
+                        help='training config: ./conf/train/*.yaml')
+    # --- feature config ---
+    parser.add_argument('--video-data', metavar='dir', type=str,
                         help='input video feature dir')
-    parser.add_argument('--audio-data', type=str,
+    parser.add_argument('--audio-data', metavar='dir', type=str,
                         help='input audio feature dir')
-    parser.add_argument('--text-data', type=str,
+    parser.add_argument('--text-data', metavar='dir', type=str,
                         help='input text feature dir')
     # --- dataset/label config ---
-    parser.add_argument('--trainset-list', type=str,
+    parser.add_argument('--trainset-list', metavar='txt', type=str,
                         help='input trainset list')
-    parser.add_argument('--validset-list', type=str,
-                        help='input validationset list')
-    parser.add_argument('--testset-list', type=str,
+    parser.add_argument('--validset-list', metavar='txt', type=str,
+                        help='input validset list')
+    parser.add_argument('--testset-list', metavar='txt', type=str,
                         help='input testset list')
-    # --- method config ---
-    parser.add_argument('--input-modal',
-                        choices=INPUT_MODAL,
-                        default='videoaudiotext',
-                        help=u'input modality: {}'.format(', '.join(INPUT_MODAL)))
-    # --- fine-tuning option ---
-    parser.add_argument('--init-model', type=str,
-                        help=u'initial_model.pt')
-    parser.add_argument('--init-model-dir', type=str,
-                        help=u'initial_model dir')
+    # --- dataset/label config ---
+    parser.add_argument('--init-model', metavar='pt', type=str,
+                        help=u'initial model file (for resume or finetune)')
+    parser.add_argument('--init-model-dir', metavar='dir', type=str,
+                        help=u'initial model dir (for resume or finetune)')
     parser.add_argument('--finetune', action='store_true', default=False,
                         help=u'finetune pretrained --init-model from 1st epoch')
+    # --- inference config ---
     parser.add_argument('--test-only', action='store_true', default=False,
-                        help=u'skip training and run inference')
-    parser.add_argument('--attn-save-dir', type=str,
-                        help='output attention dir (available when --test-only)')
-    parser.add_argument('--embed-save-dir', type=str,
-                        help='output embedding dir (available when --test-only)')
+                        help=u'skip training and run inference only')
+    parser.add_argument('--attn-save-dir', metavar='dir', type=str,
+                        help='output attention/gate-weight dir (available if --test-only)')
+    parser.add_argument('--embed-save-dir', metavar='dir', type=str,
+                        help='output embedding dir (available if --test-only)')
+    # --- running env config ---
+    parser.add_argument('--gpu', metavar='gpuid', type=int, default=-1,
+                        help=u'GPU id (use cpu if gpuid < 0)')
+    parser.add_argument('--num-workers', metavar='num', type=int, default=1,
+                        help=u'number of dataloader workers')
     return parser.parse_args()
 
 

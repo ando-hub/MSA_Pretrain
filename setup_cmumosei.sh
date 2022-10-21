@@ -1,20 +1,17 @@
 #!/bin/bash
 
-stage=6
-stop_stage=6
+stage=0
+stop_stage=100
 
-gpuid=3                # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
+gpuid=0                 # Use ${gpuid}-th GPU in feature extraction if $gpuid >= 0
 extfeat_batchsize=4     # proc every $batchsize files in audio/text feature extraction
+segmentation_workers=10 # num. of workers in video segmentation
 
 # cmumosei dataset path
-#cmumosei_root='./data/src/CMU-MOSEI/Raw'
-#cmumosei_label_csd='./data/src/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
-#cmumosei_feat_mmdatasdk='./data/src/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
-#cmumosei_feat_mmsa='./data/src/CMU-MOSEI/MMSA/Processed/unaligned_50.pkl'
-cmumosei_root='/nfs/data/open/CMU-MOSEI/Raw'
-cmumosei_label_csd='/nfs/data/open/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
-cmumosei_feat_mmdatasdk='/nfs/data/open/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
-cmumosei_feat_mmsa='/home/ando/work/220613_MMER_MMSA/data/MOSEI/Processed/unaligned_50.pkl'
+cmumosei_root='./data/src/CMU-MOSEI/Raw'
+cmumosei_label_csd='./data/src/CMU-MOSEI/CMU-MultimodalSDK/labels/CMU_MOSEI_Labels.csd'
+cmumosei_feat_mmdatasdk='./data/src/CMU-MOSEI/processed_data/cmu-mosei/seq_length_50/mosei_senti_data_noalign.pkl'
+cmumosei_feat_mmsa='./data/src/CMU-MOSEI/MMSA/Processed/unaligned_50.pkl'
 
 output_dir='./data/dataset/cmumosei'
 label_format='sentiment_regress'    # sentiment_regress, sentiment_class, or emo_class
@@ -79,7 +76,8 @@ if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
         $cmumosei_root/Videos/Full/Combined \
         $output_dir/interval/cmumosei_interval_all.txt \
         $output_dir/video/original \
-        $output_dir/audio/original 
+        $output_dir/audio/original \
+        -n $segmentation_workers
 
     echo "get utterance-level text files ..."
     python scripts/preproc/mosei_segment_text.py \
