@@ -12,9 +12,6 @@ title={On the Use of Modalty-Specific Large-Scale Pre-Trained Encoders for Multi
   }
 ```
 
-![model](model.png)
-
-
 ## License
 Please read `LICENSE`  before using scripts.
 
@@ -62,13 +59,14 @@ Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if y
 
 CMU-MOSI
 
-|                      |MAE |Corr|
-|:---------------------|---:|---:|
-|mmdatasdk (Conv)      |.934|.667|
-|mmsa (Conv-BERT)      |.889|.691|
-|P/T Enc. output       |.844|.716|
-|P/T Enc. mid-best     |.812|.747|
-|P/T Enc. weighted     |.833|.751|
+|                      |CMU-MOSI|    |CMU-MOSEI|    |
+|^                     |MAE     |Corr|MAE      |Corr|
+|:---------------------|-------:|---:|--------:|---:|
+|mmdatasdk (Conv)      |.934    |.667|.598     |.684|
+|mmsa (Conv-BERT)      |.889    |.691|.542     |.748|
+|P/T Enc. output       |.844    |.716|.521     |.772|
+|P/T Enc. mid-best     |.812    |.747|.507     |.789|
+|P/T Enc. weighted     |.833    |.751|.511     |.785|
 
 CMU-MOSEI
 
