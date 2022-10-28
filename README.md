@@ -31,6 +31,21 @@ Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if y
 ```
 ./train.sh
 ```
+- Edit the following values to try different setups
+    - dataset: `cmumosi` or `cmumosei`
+    - input\_modal: `video`, `audio`, `text`, or `videoaudiotext`
+    - feat: `mmdatasdk_noalign`(Conv in paper), `mmsa_noalign`(Conv-BERT), or `pretrained`(Enc. \*)
+    - config\_models
+    - config\_feats:
+        - `layerXX`: outputs of (XX+1)-th encoder layer (layer23 = Enc. output)
+        - `layerbest`: combination of best intermediate encoder layers (Enc. mid-best)
+        - `layerall`: weighted sum of the outputs of intermediate encoder layers (Enc. weighted)
+- You can see the performance in `$rsltd/result.tst.txt`
+    - [task: 2/3/5/7/nz2] mean 2-(neg/nonneg)/3-/5-/7-/2-(neg/pos) class performances. WA, UA, MF1, WF1 is weighted accuracy, unweighted accuracy, macro F1, and weighted F1, respectively
+    - [task: reg\_regress] is regression performance
+- ***The results may slightly different from those in the paper*** due to cuda nondeterministic behavior (see: https://pytorch.org/docs/stable/notes/randomness.html)
+    - The results with this repository are in `result.md`.
+
 
 ## Paper
 Please cite the following paper if you find our work is useful in your research:

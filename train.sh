@@ -1,12 +1,12 @@
 #!/bin/bash
 
-gpuid=3
+gpuid=0
 num_workers=12
 
-dataset=cmumosi                    # cmumosi / cmumosei
-input_modals='videoaudiotext'
+dataset=cmumosei                    # cmumosi / cmumosei
+input_modal='videoaudiotext'
 
-feat=mmsa_noalign                     # pretrained / mmdatasdk_noalign / mmsa_noalign
+feat=pretrained                     # pretrained / mmdatasdk_noalign / mmsa_noalign
 label=sentiment_regress
 
 video_data=./data/dataset/$dataset/feat/video/$feat
@@ -20,7 +20,7 @@ out_base="./data/trained/$label/$dataset/$feat"
 out_merge_base="./data/trained_merge/$label/$dataset/$feat"
 
 config_models='
-./conf/model/enc1x128sap4dec1_gate_dec2.yaml
+./conf/model/enc1sap4dec1_gate_dec2.yaml
 '
 #./conf/model/enc1sap4dec1_gate_dec2.yaml
 #./conf/model/enc1x128sap4dec1_gate_dec2.yaml
@@ -35,6 +35,8 @@ config_trains='
 
 config_feats="
 ./conf/feat/layer23.yaml
+./conf/feat/layerbestmosei.yaml
+./conf/feat/layerall.yaml
 "
 #./conf/feat/layerall.yaml
 #./conf/feat/layerbestmosi.yaml
@@ -64,43 +66,40 @@ config_feats="
 #./conf/feat/layer1.yaml
 #./conf/feat/layer0.yaml
 
-# main
+# trial loop
 for config_model in $config_models ; do
     for config_train in $config_trains ; do
         for config_feat in $config_feats ; do
-            for input_modal in $input_modals ; do
-
-                outd="$out_base/input_${input_modal}.model_`basename $config_model .yaml`.train_`basename $config_train .yaml`.feat_`basename $config_feat .yaml`"
-
-                modeld="$outd/model"
-                rsltd="$outd/result"
-                logf="$outd/train.log"
-                
-                opt=""
-                if [ -e $modeld/model.pt ]; then
-                    # resume
-                    opt="$opt --init-model-dir $modeld"
-                fi
-
-                python scripts/train/train.py \
-                    --model-save-dir $modeld \
-                    --result-dir $rsltd \
-                    -l $logf \
-                    --loglevel debug \
-                    --gpu $gpuid \
-                    --num-workers $num_workers \
-                    --config-train $config_train \
-                    --config-model $config_model \
-                    --config-feat $config_feat \
-                    --audio-data $audio_data \
-                    --video-data $video_data \
-                    --text-data $text_data \
-                    --trainset-list $train_list \
-                    --validset-list $valid_list \
-                    --testset-list $test_list \
-                    --input-modal $input_modal \
-                    $opt
-            done
+            # set output path
+            outd="$out_base/input_${input_modal}.model_`basename $config_model .yaml`.train_`basename $config_train .yaml`.feat_`basename $config_feat .yaml`"
+            modeld="$outd/model"
+            rsltd="$outd/result"
+            logf="$outd/train.log"
+            
+            opt=""
+            if [ -e $modeld/model.pt ]; then
+                # resume
+                opt="$opt --init-model-dir $modeld"
+            fi
+            
+            # training
+            python scripts/train/train.py \
+                --model-save-dir $modeld \
+                --result-dir $rsltd \
+                -l $logf \
+                --gpu $gpuid \
+                --num-workers $num_workers \
+                --config-train $config_train \
+                --config-model $config_model \
+                --config-feat $config_feat \
+                --audio-data $audio_data \
+                --video-data $video_data \
+                --text-data $text_data \
+                --trainset-list $train_list \
+                --validset-list $valid_list \
+                --testset-list $test_list \
+                --input-modal $input_modal \
+                $opt
         done
     done
 done
