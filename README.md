@@ -53,32 +53,16 @@ Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if y
 - You can see the performance in `$rsltd/result.tst.txt`
     - [task: 2/3/5/7/nz2] mean 2(neg/nonneg)/3/5/7/2(neg/pos)-class classification performances. WA, UA, MF1, WF1 is weighted accuracy, unweighted accuracy, macro F1, and weighted F1, respectively
     - [task: reg\_regress] is regression performance
-- ***The results may slightly different from those in the paper due to cuda nondeterministic behavior***  
-  (see: https://pytorch.org/docs/stable/notes/randomness.html)  
-  Results by this repos are:
-
-CMU-MOSI
-
-|                      |>   | CMU-MOSI|>   |CMU-MOSEI|
-|:---------------------|---:|--------:|---:|--------:|
-|                      |MAE |Corr     |MAE |Corr     |
-|mmdatasdk (Conv)      |.934|.667     |.598|.684     |
-|mmsa (Conv-BERT)      |.889|.691     |.542|.748     |
-|P/T Enc. output       |.844|.716     |.521|.772     |
-|P/T Enc. mid-best     |.812|.747     |.507|.789     |
-|P/T Enc. weighted     |.833|.751     |.511|.785     |
-
-CMU-MOSEI
-
-|                     |MAE |Corr|
-|:--------------------|---:|---:|
-|mmdatasdk (Conv)     |.598|.684|
-|mmsa (Conv-BERT)     |.542|.748|
-|P/T Enc. output      |.521|.772|
-|P/T Enc. mid-best    |.507|.789|
-|P/T Enc. weighted    |.511|.785|
+- ***The results may slightly different from those in the paper due to cuda nondeterministic behavior*** (see: https://pytorch.org/docs/stable/notes/randomness.html). Results by this repos are:
 
 
+|                      |MOSI-MAE |MOSI-Corr|MOSEI-MAE|MOSEI-Corr|
+|:---------------------|--------:|--------:|--------:|---------:|
+|mmdatasdk (Conv)      |.934     |.667     |.598     |.684      |
+|mmsa (Conv-BERT)      |.889     |.691     |.542     |.748      |
+|P/T Enc. output       |.844     |.716     |.521     |.772      |
+|P/T Enc. mid-best     |.812     |.747     |.507     |.789      |
+|P/T Enc. weighted     |.833     |.751     |.511     |.785      |
 
 
 ## Contact
