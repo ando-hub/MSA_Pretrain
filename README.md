@@ -60,8 +60,8 @@ Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if y
 CMU-MOSI
 
 |                      |CMU-MOSI|    |CMU-MOSEI|    |
-|^                     |MAE     |Corr|MAE      |Corr|
 |:---------------------|-------:|---:|--------:|---:|
+|^                     |MAE     |Corr|MAE      |Corr|
 |mmdatasdk (Conv)      |.934    |.667|.598     |.684|
 |mmsa (Conv-BERT)      |.889    |.691|.542     |.748|
 |P/T Enc. output       |.844    |.716|.521     |.772|
