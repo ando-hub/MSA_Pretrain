@@ -1,13 +1,13 @@
 # 5-trial average scores
 
 ## CMU-MOSI
-|                     |MAE |Corr|
-|:--------------------|---:|---:|
-|mmdatasdk(conv. feat)|.934|.667|
-|mmsa(conv-BERT feat) |.889|.691|
-|P/T Enc. output      |.844|.716|
-|P/T Enc. mid-best    |.812|.747|
-|P/T Enc. weighted    |.833|.751|
+|                      |MAE |Corr|
+|:---------------------|---:|---:|
+|mmdatasdk (Conv)      |.934|.667|
+|mmsa (Conv-BERT)      |.889|.691|
+|P/T Enc. output       |.844|.716|
+|P/T Enc. mid-best     |.812|.747|
+|P/T Enc. weighted     |.833|.751|
 
 - result files and scores 
 ```
@@ -21,8 +21,8 @@ cmumosi/pretrained/input_videoaudiotext.model_enc1x128sap4dec1_gate_dec2.train_m
 ## CMU-MOSEI
 |                     |MAE |Corr|
 |:--------------------|---:|---:|
-|mmdatasdk(conv. feat)|.598|.684|
-|mmsa(conv-BERT feat) |.542|.748|
+|mmdatasdk (Conv)     |.598|.684|
+|mmsa (Conv-BERT)     |.542|.748|
 |P/T Enc. output      |.521|.772|
 |P/T Enc. mid-best    |.507|.789|
 |P/T Enc. weighted    |.511|.785|

@@ -31,7 +31,6 @@ python scripts/train/train.py \
     --gpu $gpuid \
     --num-workers $num_workers \
     -l $modeld/get_embeddings.log \
-    --loglevel debug \
     --audio-data $audio_data \
     --video-data $video_data \
     --text-data $text_data \
