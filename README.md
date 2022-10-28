@@ -12,7 +12,7 @@ title={On the Use of Modalty-Specific Large-Scale Pre-Trained Encoders for Multi
   }
 ```
 
-[[model.png]]
+![model](model.png)
 
 
 ## License
@@ -56,9 +56,12 @@ Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if y
 - You can see the performance in `$rsltd/result.tst.txt`
     - [task: 2/3/5/7/nz2] mean 2(neg/nonneg)/3/5/7/2(neg/pos)-class classification performances. WA, UA, MF1, WF1 is weighted accuracy, unweighted accuracy, macro F1, and weighted F1, respectively
     - [task: reg\_regress] is regression performance
-- ***The results may slightly different from those in the paper due to cuda nondeterministic behavior*** (see: https://pytorch.org/docs/stable/notes/randomness.html)  
+- ***The results may slightly different from those in the paper due to cuda nondeterministic behavior***  
+  (see: https://pytorch.org/docs/stable/notes/randomness.html)  
   Results by this repos are:
-  - CMU-MOSI
+
+CMU-MOSI
+
 |                      |MAE |Corr|
 |:---------------------|---:|---:|
 |mmdatasdk (Conv)      |.934|.667|
@@ -67,7 +70,8 @@ Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if y
 |P/T Enc. mid-best     |.812|.747|
 |P/T Enc. weighted     |.833|.751|
 
-  - CMU-MOSEI
+CMU-MOSEI
+
 |                     |MAE |Corr|
 |:--------------------|---:|---:|
 |mmdatasdk (Conv)     |.598|.684|
