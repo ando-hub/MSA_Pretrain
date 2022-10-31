@@ -11,3 +11,9 @@ h5py
 seaborn
 ffmpeg-python
 opencv-python
+transformers
+scikit-learn
+tqdm
+pandas
+Pillow
+dlib

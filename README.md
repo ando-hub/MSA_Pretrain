@@ -1,6 +1,6 @@
 # Multimodal Sentiment Analysis
 
-Official pytorch implementation of [On the Use of Modalty-Specific Large-Scale Pre-Trained Encoders for Multimodal Sentiment Analysis (SLT2022)](https://arxiv.org/abs/xxxx.xxxxx).
+Official pytorch implementation of [On the Use of Modalty-Specific Large-Scale Pre-Trained Encoders for Multimodal Sentiment Analysis (SLT2022)](https://arxiv.org/abs/2210.15937).
 
 ```
 @inproceedings{ando2022MSA_Pretrain,
