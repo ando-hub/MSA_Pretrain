@@ -25,23 +25,21 @@ Please read `LICENSE`  before using scripts.
 
 ### 1. Install dependencies
 ```
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
-### 2. Save pretrained WavLM model
+### 2. Copy pretrained WavLM model
 ```
 (download WavLM Large model from https://github.com/microsoft/unilm/tree/master/wavlm)
 cp ./WavLM-Large.pt conf/pretrained_enc
-
 ```
 
 ### 3. Run setup scripts
-
-Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if you have CMU-MOSI/CMU-MOSEI corpora.
 ```
 ./setup_cmumosi.sh
 ./setup_cmumosei.sh
 ```
+- Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if you have CMU-MOSI/CMU-MOSEI corpora.
 
 ### 4. Run training script
 ```
@@ -56,16 +54,16 @@ Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if y
         - `layerXX`: outputs of (XX+1)-th encoder layer (layer23 = Enc. output)
         - `layerbest`: combination of best intermediate encoder layers (Enc. mid-best)
         - `layerall`: weighted sum of the outputs of intermediate encoder layers (Enc. weighted)
-- You can see the performance in `$rsltd/result.tst.txt`
+- You can see the performances in `$rsltd/result.tst.txt`
     - [task: 2/3/5/7/nz2] mean 2(neg/nonneg)/3/5/7/2(neg/pos)-class classification performances. WA, UA, MF1, WF1 is weighted accuracy, unweighted accuracy, macro F1, and weighted F1, respectively
-    - [task: reg\_regress] is regression performance
-- ***The results may slightly different from those in the paper due to cuda nondeterministic behavior*** (see: https://pytorch.org/docs/stable/notes/randomness.html). Results by this repos are:
+    - [task: reg\_regress] shows regression performance
+- ***The results may be slightly different from those in the paper due to CUDA nondeterministic behavior*** (see: https://pytorch.org/docs/stable/notes/randomness.html). Results of this repos are:
 
 
 |                      |MOSI-MAE |MOSI-Corr|MOSEI-MAE|MOSEI-Corr|
 |:---------------------|--------:|--------:|--------:|---------:|
-|mmdatasdk (Conv)      |.934     |.667     |.598     |.684      |
-|mmsa (Conv-BERT)      |.889     |.691     |.542     |.748      |
+|Conv (mmdatasdk)      |.934     |.667     |.598     |.684      |
+|Conv-BERT (mmsa)      |.889     |.691     |.542     |.748      |
 |P/T Enc. output       |.844     |.716     |.521     |.772      |
 |P/T Enc. mid-best     |.812     |.747     |.507     |.789      |
 |P/T Enc. weighted     |.833     |.751     |.511     |.785      |
