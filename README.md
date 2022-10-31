@@ -15,6 +15,12 @@ title={On the Use of Modalty-Specific Large-Scale Pre-Trained Encoders for Multi
 ## License
 Please read `LICENSE`  before using scripts.
 
+
+## Requirements
+- Python >= 3.9
+- pytorch >= 1.12
+- CUDA >= 10.2
+
 ## Usage
 
 ### 1. Install dependencies
