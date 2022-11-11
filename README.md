@@ -34,11 +34,12 @@ pip install -r requirements.txt
 cp ./WavLM-Large.pt conf/pretrained_enc
 ```
 
-### 3. Run setup scripts (data preparation + feature extraction by the pre-trained encoders)
+### 3. Run setup scripts
 ```
 ./setup_cmumosi.sh
 ./setup_cmumosei.sh
 ```
+- The setup scripts include video segmentation on CMU-MOSEI, label generation, and feature extraction by the pre-trained encoders
 - Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if you have CMU-MOSI/CMU-MOSEI corpora.
 
 ### 4. Run training script
