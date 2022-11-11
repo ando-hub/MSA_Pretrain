@@ -34,7 +34,7 @@ pip install -r requirements.txt
 cp ./WavLM-Large.pt conf/pretrained_enc
 ```
 
-### 3. Run setup scripts
+### 3. Run setup scripts (data preparation + feature extraction by the pre-trained encoders)
 ```
 ./setup_cmumosi.sh
 ./setup_cmumosei.sh
