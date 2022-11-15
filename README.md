@@ -26,6 +26,8 @@ Please read `LICENSE`  before using scripts.
 ### 1. Install dependencies
 ```
 pip install -r requirements.txt
+git submodule init
+git submodule update
 ```
 
 ### 2. Copy pretrained WavLM model
