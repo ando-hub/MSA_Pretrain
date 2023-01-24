@@ -81,7 +81,9 @@ class AudioEmbeddingExtractor():
                         )
             # reshape: [n_bat, n_lay, n_len, n_dim]
             if self.get_layer_results:
-                y = torch.cat([x.transpose(0, 1).unsqueeze(1) for x, _ in layer_results], dim=1)
+                # skip 0-th layer of layer_results since it is CNN output and not the outputs of transformer blocks
+                # see L591-592 in unilm/wavlm/WavLM.py
+                y = torch.cat([x.transpose(0, 1).unsqueeze(1) for x, _ in layer_results[1:]], dim=1)
             else:
                 y = y.unsqueeze(1)
             # return

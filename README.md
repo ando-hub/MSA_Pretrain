@@ -43,6 +43,7 @@ cp ./WavLM-Large.pt conf/pretrained_enc
 ```
 - The setup scripts include video segmentation on CMU-MOSEI, label generation, and feature extraction by the pre-trained encoders
 - Please edit `[cmumosi|cmumosei] dataset path` in the scripts before running if you have CMU-MOSI/CMU-MOSEI corpora.
+- If you run the scripts on GPU and occur CUDA Out-of-Memory Error, try `extfeat_batchsize=1`. If it doesn't work, please run the feature extraction step on GPU, then re-run that step on CPU, `gpuid=-1`, to process all the files.
 
 ### 4. Run training script
 ```
